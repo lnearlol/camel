@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.camel</groupId>
         <artifactId>camel-cxf-parent</artifactId>
-        <version>4.14.3-SNAPSHOT</version>
+        <version>4.14.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>camel-cxf-soap</artifactId>
@@ -194,7 +194,6 @@
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-ws-security</artifactId>
             <version>${cxf-version}</version>
-            <scope>test</scope>
         </dependency>
 
 

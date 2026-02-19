@@ -102,6 +102,18 @@ public class Run extends CamelCommand {
     private static final Set<String> ACCEPTED_XML_ROOT_ELEMENTS
             = new HashSet<>(Arrays.asList(ACCEPTED_XML_ROOT_ELEMENT_NAMES));
 
+    private static final String[] ACCEPTED_YAML_ROOT_ELEMENT_NAMES = new String[] {
+            "- from:", "- route:",
+            "- routeTemplate:", "- route-template:",
+            "- templatedRoute:", "templated-route:",
+            "- routeConfiguration:", "- route-configuration:",
+            "- rest:", "- beans:",
+            "Pipe" // special for camel-k pipe
+    };
+
+    private static final Set<String> ACCEPTED_YAML_ROOT_ELEMENTS
+            = new HashSet<>(Arrays.asList(ACCEPTED_YAML_ROOT_ELEMENT_NAMES));
+
     private static final String OPENAPI_GENERATED_FILE = CommandLineHelper.CAMEL_JBANG_WORK_DIR + "/generated-openapi.yaml";
     private static final String CLIPBOARD_GENERATED_FILE = CommandLineHelper.CAMEL_JBANG_WORK_DIR + "/generated-clipboard";
 
@@ -652,10 +664,6 @@ public class Run extends CamelCommand {
         writeSetting(main, profileProperties, QUARKUS_GROUP_ID, quarkusGroupId);
         writeSetting(main, profileProperties, QUARKUS_ARTIFACT_ID, quarkusArtifactId);
 
-        if (observe) {
-            main.addInitialProperty(DEPENDENCIES, "camel:observability-services");
-        }
-
         // command line arguments
         if (property != null) {
             for (String p : property) {
@@ -955,6 +963,10 @@ public class Run extends CamelCommand {
 
         // merge existing dependencies with --deps
         addDependencies(RuntimeUtil.getDependenciesAsArray(profileProperties));
+
+        if (observe) {
+            dependencies.add("camel:observability-services");
+        }
         if (!dependencies.isEmpty()) {
             var joined = String.join(",", dependencies);
             main.addInitialProperty(DEPENDENCIES, joined);
@@ -1097,7 +1109,7 @@ public class Run extends CamelCommand {
         eq.lazyBean = this.lazyBean;
         eq.applicationProperties = this.property;
 
-        printer().println("Running using Quarkus v" + eq.quarkusVersion + " (preparing and downloading files)");
+        printer().println("Running using Quarkus (preparing and downloading files)");
 
         // run export
         int exit = eq.export();
@@ -1209,7 +1221,7 @@ public class Run extends CamelCommand {
         eq.lazyBean = this.lazyBean;
         eq.applicationProperties = this.property;
 
-        printer().println("Running using Spring Boot v" + eq.springBootVersion + " (preparing and downloading files)");
+        printer().println("Running using Spring Boot (preparing and downloading files)");
 
         // run export
         int exit = eq.export();
@@ -1871,17 +1883,7 @@ public class Run extends CamelCommand {
                     }
                     return ACCEPTED_XML_ROOT_ELEMENTS.contains(info.getRootElementName());
                 } else {
-                    // TODO: we probably need a way to parse the content and match against the YAML DSL expected by Camel
-                    // This check looks very fragile
-                    return source.content().contains("- from:")
-                            || source.content().contains("- route:")
-                            || source.content().contains("- routeTemplate") || source.content().contains("- route-template:")
-                            || source.content().contains("- routeConfiguration:")
-                            || source.content().contains("- route-configuration:")
-                            || source.content().contains("- rest:")
-                            || source.content().contains("- beans:")
-                            // also support Pipes.
-                            || source.content().contains("Pipe");
+                    return ACCEPTED_YAML_ROOT_ELEMENTS.stream().anyMatch(tag -> source.content().contains(tag));
                 }
             }
             // if the ext is an accepted file then we include it as a potential route
